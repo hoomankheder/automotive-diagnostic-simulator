@@ -134,7 +134,7 @@ automotive-diagnostic-simulator/
 **Requirements:** Python 3.10 or higher
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/automotive-diagnostic-simulator.git
+git clone https://github.com/hoomankheder/automotive-diagnostic-simulator.git
 cd automotive-diagnostic-simulator
 pip install python-can
 ```
@@ -208,13 +208,6 @@ manufacturer-specific hash functions. The structure of the two-step
 challenge-response is identical to production implementations.
 
 ---
-
-## Background
-
-This project was built to demonstrate practical knowledge of automotive
-communication protocols gained through a Master's degree in Embedded Electronics
-and a Udemy certification in CAN, CAN-FD, CAN-TP and UDS Automotive
-Communications and Diagnostics.
 
 The same protocol stack implemented here is used in production ECUs across
 the automotive industry for end-of-line testing, field diagnostics, and
