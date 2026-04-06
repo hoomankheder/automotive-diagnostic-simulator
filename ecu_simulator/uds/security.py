@@ -13,7 +13,7 @@ Algorithm (intentionally simple for demo):
   key = seed XOR 0xA5B6
 """
 
-from ecu_state import ECUState, SESSION_DEFAULT, SECURITY_UNLOCKED
+from ecu_simulator.ecu_state import ECUState, SESSION_DEFAULT, SECURITY_UNLOCKED
 
 # Negative Response Codes
 NRC_SUB_FUNCTION_NOT_SUPPORTED  = 0x12

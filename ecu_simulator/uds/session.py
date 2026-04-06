@@ -7,7 +7,7 @@ Allows the tester to switch the ECU between diagnostic sessions:
   0x03  extendedDiagnosticSession
 """
 
-from ecu_state import ECUState, SESSION_DEFAULT, SESSION_EXTENDED, SESSION_PROGRAMMING
+from ecu_simulator.ecu_state import ECUState, SESSION_DEFAULT, SESSION_EXTENDED, SESSION_PROGRAMMING
 
 # UDS negative response codes
 NRC_SUB_FUNCTION_NOT_SUPPORTED = 0x12

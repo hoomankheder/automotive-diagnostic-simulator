@@ -1,23 +1,143 @@
 # Automotive Diagnostic Simulator
 
-A fully functional simulation of automotive ECU diagnostics built in Python.
-Implements **CAN bus communication**, **ISO 15765-2 transport layer (CAN-TP)**,
-and **UDS (Unified Diagnostic Services / ISO 14229)** — the exact protocols
-used in real vehicles by companies like Bosch, Continental, and Delphi.
-
-No hardware required. Runs entirely on your laptop using UDP sockets to
-simulate the CAN bus between two processes.
+A working simulation of automotive ECU diagnostics built in Python.
+Implements the full protocol stack used in real vehicles — CAN bus, ISO 15765-2 transport layer,
+and UDS (ISO 14229) — across two communicating processes with no hardware required.
 
 ---
 
-## Demo
+## Architecture
+
+```
+┌─────────────────────────┐     UDP localhost      ┌──────────────────────────┐
+│      ECU Simulator       │  port 5000 ↔ port 5001 │    Diagnostic Tool        │
+│                          │ ◄────────────────────► │                          │
+│  ecu_state.py            │   ISO 15765-2 frames   │  uds_client.py           │
+│  uds/ (one file/service) │                        │  formatter.py            │
+│  can_interface.py        │                        │  can_interface.py        │
+└─────────────────────────┘                        └──────────────────────────┘
+```
+
+The CAN bus is simulated over UDP sockets. Each datagram is a 12-byte CAN frame:
+4 bytes arbitration ID + 8 bytes data. No CAN adapter or drivers needed.
+
+---
+
+## Standards Implemented
+
+| Standard | Layer | What It Does |
+|---|---|---|
+| ISO 11898 | Physical | CAN bus — simulated over UDP localhost |
+| ISO 15765-2 | Transport | CAN-TP — SF / FF / CF / FC frame handling |
+| ISO 14229-1 | Application | UDS — five diagnostic services |
+
+---
+
+## UDS Services
+
+| SID | Service | Notes |
+|---|---|---|
+| `0x10` | Diagnostic Session Control | Default / Extended / Programming |
+| `0x22` | Read Data By Identifier | 8 DIDs including live sensor simulation |
+| `0x27` | Security Access | Seed / key challenge-response (XOR algorithm) |
+| `0x14` | Clear DTC | Requires extended session + security unlock |
+| `0x19` | Read DTC Information | Sub-functions 0x01 (count) and 0x02 (full records) |
+
+---
+
+## Project Structure
+
+```
+automotive-diagnostic-simulator/
+├── ecu_simulator/
+│   ├── main.py               # Event loop and UDS routing
+│   ├── ecu_state.py          # Session, security, DTCs, live sensors
+│   ├── can_interface.py      # ISO 15765-2 framing over UDP
+│   └── uds/
+│       ├── session.py        # 0x10
+│       ├── read_data.py      # 0x22
+│       ├── security.py       # 0x27
+│       └── dtc.py            # 0x14 + 0x19
+├── diagnostic_tool/
+│   ├── main.py               # CLI with argparse subcommands
+│   ├── uds_client.py         # Request builder and response parser
+│   ├── can_interface.py      # Tester-side transport layer
+│   └── formatter.py          # Colored terminal output (ANSI)
+├── tests/
+│   ├── test_session.py
+│   ├── test_security.py
+│   ├── test_read_data.py
+│   └── test_dtc.py
+└── requirements.txt
+```
+
+---
+
+## Installation
+
+Requires Python 3.10+
+
+```bash
+git clone https://github.com/hoomankheder/automotive-diagnostic-simulator.git
+cd automotive-diagnostic-simulator
+pip install python-can pytest
+```
+
+---
+
+## Running
+
+Open two terminals.
+
+**Terminal 1 — ECU Simulator:**
+```bash
+cd ecu_simulator
+python main.py
+```
+
+**Terminal 2 — Diagnostic Tool:**
+```bash
+cd diagnostic_tool
+
+python main.py scan-all
+python main.py read-did 0x0100
+python main.py session extended
+python main.py security-access
+python main.py read-dtc
+python main.py clear-dtc
+```
+
+---
+
+## Testing
+
+```bash
+pytest tests/ -v
+```
+
+Expected output:
+```
+tests/test_session.py    ..   PASSED
+tests/test_security.py   ...  PASSED
+tests/test_read_data.py  ..   PASSED
+tests/test_dtc.py        .    PASSED
+
+8 passed in 0.15s
+```
+
+Tests cover positive responses, negative responses (NRC validation),
+and state-dependent behavior — session transitions, security enforcement,
+and access control for protected services.
+
+---
+
+## Live Demo Output
 
 ```
 ──────────────────────────────────────────────────
   Live Data Scan — All DIDs
 ──────────────────────────────────────────────────
   ●  VIN                             SIMVIN00000000001
-  ●  ECU Part Number                 SIM-ECU-PART-001
   ●  ECU Software Version            SW:1.2.3
   ●  Active Session                  Default
   ●  Engine RPM                      729 rpm
@@ -36,15 +156,14 @@ simulate the CAN bus between two processes.
   Read DTC Information (0x19)
 ──────────────────────────────────────────────────
   !  3 DTC(s) found:
-  DTC Code       Status
-  ────────────  ────────
-  0x0c0100     0x09
-  0x0b1200     0x08
-  0x0e0300     0x0f
+     0x0c0100    0x09
+     0x0b1200    0x08
+     0x0e0300    0x0f
 ```
 
 ---
 
+<<<<<<< HEAD
 ## Architecture
 
 ```
@@ -215,6 +334,8 @@ ECU reprogramming.
 
 ---
 
+=======
+>>>>>>> dc97785 (Add pytest test suite and update README)
 ## License
 
-MIT License — free to use, modify, and distribute.
+MIT

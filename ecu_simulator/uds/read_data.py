@@ -13,7 +13,7 @@ Data Identifiers (DIDs) exposed by this simulated ECU:
 """
 
 import struct
-from ecu_state import ECUState
+from ecu_simulator.ecu_state import ECUState, SESSION_DEFAULT, SESSION_EXTENDED, SESSION_PROGRAMMING
 
 # Negative Response Codes
 NRC_REQUEST_OUT_OF_RANGE        = 0x31

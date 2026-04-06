@@ -9,7 +9,7 @@ Supported 0x19 sub-functions:
   0x02  reportDTCByStatusMask
 """
 
-from ecu_state import ECUState, SECURITY_UNLOCKED
+from ecu_simulator.ecu_state import ECUState, SECURITY_UNLOCKED
 
 # NRCs
 NRC_CONDITIONS_NOT_CORRECT     = 0x22
