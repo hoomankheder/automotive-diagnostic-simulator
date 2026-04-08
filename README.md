@@ -1,4 +1,4 @@
-# Automotive Diagnostic Simulator (UDS ECU)
+# Automotive ECU Diagnostic Simulator (UDS over CAN)
 
 A Python-based simulation of an automotive Electronic Control Unit (ECU) implementing core Unified Diagnostic Services (UDS) as defined in ISO 14229.
 
@@ -22,6 +22,7 @@ The CAN bus is simulated over UDP sockets. Each datagram is a 12-byte CAN frame:
 4 bytes arbitration ID + 8 bytes data. No CAN adapter or drivers needed.
 
 This design mirrors real-world diagnostic setups where a tester communicates with an ECU over a vehicle network.
+
 ---
 
 ## Standards Implemented
