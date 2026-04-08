@@ -9,13 +9,13 @@ and UDS (ISO 14229) — across two communicating processes with no hardware requ
 ## Architecture
 
 ```
-┌─────────────────────────┐     UDP localhost      ┌──────────────────────────┐
-│      ECU Simulator       │  port 5000 ↔ port 5001 │    Diagnostic Tool        │
+┌──────────────────────────┐     UDP localhost      ┌──────────────────────────┐
+│      ECU Simulator       │  port 5000 ↔ port 5001 │    Diagnostic Tool       │
 │                          │ ◄────────────────────► │                          │
 │  ecu_state.py            │   ISO 15765-2 frames   │  uds_client.py           │
 │  uds/ (one file/service) │                        │  formatter.py            │
 │  can_interface.py        │                        │  can_interface.py        │
-└─────────────────────────┘                        └──────────────────────────┘
+└──────────────────────────┘                        └──────────────────────────┘
 ```
 
 The CAN bus is simulated over UDP sockets. Each datagram is a 12-byte CAN frame:
