@@ -335,7 +335,7 @@ ECU reprogramming.
 ---
 
 =======
->>>>>>> dc97785 (Add pytest test suite and update README)
+
 ## License
 
 MIT
