@@ -25,11 +25,11 @@ The CAN bus is simulated over UDP sockets. Each datagram is a 12-byte CAN frame:
 
 ## Standards Implemented
 
-| Standard | Layer | What It Does |
-|---|---|---|
-| ISO 11898 | Physical | CAN bus — simulated over UDP localhost |
-| ISO 15765-2 | Transport | CAN-TP — SF / FF / CF / FC frame handling |
-| ISO 14229-1 | Application | UDS — five diagnostic services |
+| Standard | What It Does |
+|---|---|
+| ISO 11898 | CAN bus — simulated over UDP localhost |
+| ISO 15765-2 | CAN-TP — SF / FF / CF / FC frame handling |
+| ISO 14229-1 | UDS — five diagnostic services |
 
 ---
 
@@ -37,11 +37,26 @@ The CAN bus is simulated over UDP sockets. Each datagram is a 12-byte CAN frame:
 
 | SID | Service | Notes |
 |---|---|---|
-| `0x10` | Diagnostic Session Control | Default / Extended / Programming |
-| `0x22` | Read Data By Identifier | 8 DIDs including live sensor simulation |
-| `0x27` | Security Access | Seed / key challenge-response (XOR algorithm) |
-| `0x14` | Clear DTC | Requires extended session + security unlock |
-| `0x19` | Read DTC Information | Sub-functions 0x01 (count) and 0x02 (full records) |
+| `0x10` | Diagnostic Session Control | Switches ECU between Default, Extended, and Programming sessions |
+| `0x22` | Read Data By Identifier | Reads live sensor values and ECU info via DID codes |
+| `0x27` | Security Access | Two-step seed/key challenge-response to unlock protected functions |
+| `0x14` | Clear DTC | Erases all stored fault codes (requires security unlock) |
+| `0x19` | Read DTC Information | Reads stored Diagnostic Trouble Codes and their status bytes |
+
+---
+
+## Data Identifiers (DIDs)
+
+| DID | Name | Example Value |
+|---|---|---|
+| `0xF190` | VIN | `SIMVIN00000000001` |
+| `0xF187` | ECU Part Number | `SIM-ECU-PART-001` |
+| `0xF189` | ECU Software Version | `SW:1.2.3` |
+| `0xF186` | Active Diagnostic Session | `Extended Diagnostic` |
+| `0x0100` | Engine RPM | `729 rpm` (time-varying) |
+| `0x0101` | Coolant Temperature | `41 °C` (rises over time) |
+| `0x0102` | Battery Voltage | `12152 mV / 12.15 V` |
+| `0x0103` | Vehicle Speed | `46 km/h` (time-varying) |
 
 ---
 
@@ -99,12 +114,12 @@ python main.py
 ```bash
 cd diagnostic_tool
 
-python main.py scan-all
-python main.py read-did 0x0100
-python main.py session extended
-python main.py security-access
-python main.py read-dtc
-python main.py clear-dtc
+python main.py scan-all  # Read all live sensor values at once
+python main.py read-did 0x0100  # Engine RPM
+python main.py session extended  # Switch diagnostic session
+python main.py security-access  # Perform security unlock (seed/key exchange)
+python main.py read-dtc  # Read stored fault codes
+python main.py clear-dtc  # Clear all fault codes (auto-unlocks if needed)
 ```
 
 ---
@@ -122,7 +137,6 @@ tests/test_security.py   ...  PASSED
 tests/test_read_data.py  ..   PASSED
 tests/test_dtc.py        .    PASSED
 
-8 passed in 0.15s
 ```
 
 Tests cover positive responses, negative responses (NRC validation),
@@ -160,6 +174,43 @@ and access control for protected services.
      0x0b1200    0x08
      0x0e0300    0x0f
 ```
+
+---
+
+## How It Works
+
+### CAN Bus Layer
+The physical CAN bus is simulated using **UDP sockets on localhost**.
+Each UDP datagram carries one CAN frame: 4 bytes of arbitration ID followed by 8 bytes of data.
+The ECU listens on port `5000`, the diagnostic tool listens on port `5001`.
+
+### Transport Layer (ISO 15765-2 / CAN-TP)
+UDS messages longer than 7 bytes are split into multiple CAN frames.
+The implementation handles all four frame types:
+- **Single Frame (SF)** — complete message in one frame
+- **First Frame (FF)** — first segment of a long message
+- **Consecutive Frame (CF)** — remaining segments
+- **Flow Control (FC)** — receiver tells sender to continue
+
+### UDS Application Layer (ISO 14229)
+Each UDS service is implemented as a separate Python module.
+The ECU's main loop receives a raw payload, reads the Service ID (first byte),
+routes it to the correct handler, and sends back either a positive response
+or a Negative Response Code (NRC) explaining why the request was rejected.
+
+### Security Access (0x27)
+The seed/key algorithm used here is: `key = seed XOR 0xA5B6`.
+In real ECUs this is a proprietary algorithm, often involving AES or
+manufacturer-specific hash functions. The structure of the two-step
+challenge-response is identical to production implementations.
+
+---
+
+The same protocol stack implemented here is used in production ECUs across
+the automotive industry for end-of-line testing, field diagnostics, and
+ECU reprogramming.
+
+---
 
 ---
 
@@ -203,21 +254,6 @@ and access control for protected services.
 | `0x27` | Security Access | Two-step seed/key challenge-response to unlock protected functions |
 | `0x14` | Clear Diagnostic Information | Erases all stored fault codes (requires security unlock) |
 | `0x19` | Read DTC Information | Reads stored Diagnostic Trouble Codes and their status bytes |
-
----
-
-## Data Identifiers (DIDs)
-
-| DID | Name | Example Value |
-|---|---|---|
-| `0xF190` | VIN | `SIMVIN00000000001` |
-| `0xF187` | ECU Part Number | `SIM-ECU-PART-001` |
-| `0xF189` | ECU Software Version | `SW:1.2.3` |
-| `0xF186` | Active Diagnostic Session | `Extended Diagnostic` |
-| `0x0100` | Engine RPM | `729 rpm` (time-varying) |
-| `0x0101` | Coolant Temperature | `41 °C` (rises over time) |
-| `0x0102` | Battery Voltage | `12152 mV / 12.15 V` |
-| `0x0103` | Vehicle Speed | `46 km/h` (time-varying) |
 
 ---
 
@@ -296,43 +332,6 @@ python main.py read-dtc
 # Clear all fault codes (auto-unlocks if needed)
 python main.py clear-dtc
 ```
-
----
-
-## How It Works
-
-### CAN Bus Layer
-The physical CAN bus is simulated using **UDP sockets on localhost**.
-Each UDP datagram carries one CAN frame: 4 bytes of arbitration ID followed by 8 bytes of data.
-The ECU listens on port `5000`, the diagnostic tool listens on port `5001`.
-
-### Transport Layer (ISO 15765-2 / CAN-TP)
-UDS messages longer than 7 bytes are split into multiple CAN frames.
-The implementation handles all four frame types:
-- **Single Frame (SF)** — complete message in one frame
-- **First Frame (FF)** — first segment of a long message
-- **Consecutive Frame (CF)** — remaining segments
-- **Flow Control (FC)** — receiver tells sender to continue
-
-### UDS Application Layer (ISO 14229)
-Each UDS service is implemented as a separate Python module.
-The ECU's main loop receives a raw payload, reads the Service ID (first byte),
-routes it to the correct handler, and sends back either a positive response
-or a Negative Response Code (NRC) explaining why the request was rejected.
-
-### Security Access (0x27)
-The seed/key algorithm used here is: `key = seed XOR 0xA5B6`.
-In real ECUs this is a proprietary algorithm, often involving AES or
-manufacturer-specific hash functions. The structure of the two-step
-challenge-response is identical to production implementations.
-
----
-
-The same protocol stack implemented here is used in production ECUs across
-the automotive industry for end-of-line testing, field diagnostics, and
-ECU reprogramming.
-
----
 
 =======
 
