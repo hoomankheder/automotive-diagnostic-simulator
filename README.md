@@ -21,6 +21,7 @@ The simulator models state-dependent diagnostic behavior including session contr
 The CAN bus is simulated over UDP sockets. Each datagram is a 12-byte CAN frame:
 4 bytes arbitration ID + 8 bytes data. No CAN adapter or drivers needed.
 
+This design mirrors real-world diagnostic setups where a tester communicates with an ECU over a vehicle network.
 ---
 
 ## Standards Implemented
@@ -139,9 +140,13 @@ tests/test_dtc.py        .    PASSED
 
 ```
 
-Tests cover positive responses, negative responses (NRC validation),
-and state-dependent behavior — session transitions, security enforcement,
-and access control for protected services.
+The test suite validates:
+
+- Correct UDS positive responses  
+- Proper Negative Response Codes (NRCs)  
+- Session-dependent behavior enforcement  
+- Security access workflow (seed → key → unlock)  
+- Protection of restricted services (e.g., DTC clearing) 
 
 ---
 
@@ -211,7 +216,17 @@ the automotive industry for end-of-line testing, field diagnostics, and
 ECU reprogramming.
 
 ---
+## Why This Matters
 
+This project replicates the core diagnostic mechanisms used in real automotive ECUs.
+
+Understanding these systems is essential for:
+- ECU development and validation  
+- Automotive cybersecurity  
+- Reverse engineering and diagnostics tooling  
+- Embedded systems engineering in the automotive domain
+
+---
 
 ## License
 
