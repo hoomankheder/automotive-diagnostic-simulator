@@ -1,8 +1,8 @@
-# Automotive Diagnostic Simulator
+# Automotive Diagnostic Simulator (UDS ECU)
 
-A working simulation of automotive ECU diagnostics built in Python.
-Implements the full protocol stack used in real vehicles — CAN bus, ISO 15765-2 transport layer,
-and UDS (ISO 14229) — across two communicating processes with no hardware required.
+A Python-based simulation of an automotive Electronic Control Unit (ECU) implementing core Unified Diagnostic Services (UDS) as defined in ISO 14229.
+
+The simulator models state-dependent diagnostic behavior including session control, security access, data retrieval, and fault handling, with full validation using automated tests.
 
 ---
 
